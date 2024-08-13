@@ -436,3 +436,219 @@ BOOST_AUTO_TEST_CASE(t_hetero_random_2) {
 
   multi_out.to_yaml_format("/tmp/test_gen_p10_n2_1_hetero_solution.yaml");
 }
+
+BOOST_AUTO_TEST_CASE(t_multi_robot_swap2_unicycle) {
+
+  bool sum_robots_cost = 1;
+  std::string env_file =
+      DYNOBENCH_BASE "envs/multirobot/example/swap2_unicycle.yaml";
+  std::string initial_guess_file =
+      DYNOBENCH_BASE "envs/multirobot/results/swap2_unicycle_db.yaml";
+
+  Problem problem(env_file);
+  MultiRobotTrajectory init_guess_multi_robot;
+  init_guess_multi_robot.read_from_yaml(initial_guess_file.c_str());
+
+  std::vector<int> goal_times(init_guess_multi_robot.trajectories.size());
+
+  std::transform(init_guess_multi_robot.trajectories.begin(),
+                 init_guess_multi_robot.trajectories.end(), goal_times.begin(),
+                 [](const Trajectory &traj) { return traj.states.size(); });
+
+  std::cout << "goal times are " << std::endl;
+  for (auto &t : goal_times) {
+    std::cout << t << std::endl;
+  }
+
+  Trajectory init_guess;
+  if (sum_robots_cost) {
+    std::cout
+        << "warning: new approach where each robot tries to reach the goal fast"
+        << std::endl;
+    problem.goal_times = goal_times;
+  }
+
+  else {
+    std::cout
+        << "warning: old apprach, robots will reach the goals at the same time "
+        << std::endl;
+  }
+
+  Options_trajopt options_trajopt;
+  options_trajopt.solver_id = 1;
+  options_trajopt.control_bounds = 1;
+  options_trajopt.use_warmstart = 1;
+  options_trajopt.weight_goal = 100;
+  options_trajopt.max_iter = 50;
+  problem.models_base_path = DYNOBENCH_BASE "models/";
+
+  Result_opti result;
+  Trajectory sol;
+
+  dynobench::Trajectory init_guess_joint =
+      init_guess_multi_robot.transform_to_joint_trajectory();
+  init_guess.to_yaml_format("/tmp/check3.yaml");
+
+  trajectory_optimization(problem, init_guess_joint, options_trajopt, sol,
+                          result);
+
+  BOOST_TEST(result.feasible == 1);
+
+  std::cout << "optimization done! " << std::endl;
+  std::vector<int> index_time_goals;
+
+  if (problem.goal_times.size()) {
+    index_time_goals = sol.multi_robot_index_goal;
+  } else {
+    size_t num_robots = init_guess_multi_robot.get_num_robots();
+    index_time_goals = std::vector<int>(num_robots, sol.states.size());
+  }
+
+  MultiRobotTrajectory multi_out = from_joint_to_indiv_trajectory(
+      sol, init_guess_multi_robot.get_nxs(), init_guess_multi_robot.get_nus(),
+      index_time_goals);
+
+  multi_out.to_yaml_format("/tmp/test_multi_swap2_unicycle.yaml");
+}
+
+// residual force included
+
+BOOST_AUTO_TEST_CASE(t_coupled_integrator2d) {
+
+  Options_trajopt options_trajopt;
+  std::string env_file =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/envs/multirobot/"
+      "example/straight_integrator2d_coupled.yaml";
+  std::string initial_guess_file =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/envs/multirobot/"
+      "results/straight_integrator2d_coupled_db.yaml";
+
+  Problem problem(env_file);
+  Trajectory init_guess(initial_guess_file);
+
+  options_trajopt.solver_id = static_cast<int>(SOLVER::traj_opt);
+  options_trajopt.control_bounds = 1;
+  options_trajopt.use_warmstart = 1;
+  options_trajopt.weight_goal = 100;
+  options_trajopt.max_iter = 50;
+  problem.models_base_path =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/models/";
+  // problem.models_base_path = DYNOBENCH_BASE + std::string("models/");
+
+  Result_opti result;
+  Trajectory sol;
+  trajectory_optimization(problem, init_guess, options_trajopt, sol, result);
+  BOOST_TEST_CHECK(result.feasible);
+  std::cout << "cost is " << result.cost << std::endl;
+
+  std::vector<int> index_time_goals{sol.states.size(), sol.states.size()};
+  std::vector<int> nxs{4, 4};
+  std::vector<int> nus{2, 2};
+  MultiRobotTrajectory multi_out =
+      from_joint_to_indiv_trajectory(sol, nxs, nus, index_time_goals);
+
+  multi_out.to_yaml_format("integrator2d_coupled_opt.yaml");
+  // BOOST_TEST_CHECK(result.cost <= 10.);
+}
+
+BOOST_AUTO_TEST_CASE(t_swap2_double_integrator) {
+
+  bool sum_robots_cost = 1;
+  std::string env_file =
+      DYNOBENCH_BASE "envs/multirobot/example/swap2_double_integrator.yaml";
+  std::string initial_guess_file =
+      DYNOBENCH_BASE "envs/multirobot/results/swap2_double_integrator_db.yaml";
+
+  Problem problem(env_file);
+  MultiRobotTrajectory init_guess_multi_robot;
+  init_guess_multi_robot.read_from_yaml(initial_guess_file.c_str());
+
+  std::vector<int> goal_times(init_guess_multi_robot.trajectories.size());
+
+  std::transform(init_guess_multi_robot.trajectories.begin(),
+                 init_guess_multi_robot.trajectories.end(), goal_times.begin(),
+                 [](const Trajectory &traj) { return traj.states.size(); });
+
+  std::cout << "goal times are " << std::endl;
+  for (auto &t : goal_times) {
+    std::cout << t << std::endl;
+  }
+
+  Trajectory init_guess;
+  if (sum_robots_cost) {
+    std::cout
+        << "warning: new approach where each robot tries to reach the goal fast"
+        << std::endl;
+    problem.goal_times = goal_times;
+  }
+
+  else {
+    std::cout
+        << "warning: old apprach, robots will reach the goals at the same time "
+        << std::endl;
+  }
+
+  Options_trajopt options_trajopt;
+  options_trajopt.solver_id = 1;
+  options_trajopt.control_bounds = 1;
+  options_trajopt.use_warmstart = 1;
+  options_trajopt.weight_goal = 100;
+  options_trajopt.max_iter = 50;
+  problem.models_base_path = DYNOBENCH_BASE "models/";
+
+  Result_opti result;
+  Trajectory sol;
+
+  dynobench::Trajectory init_guess_joint =
+      init_guess_multi_robot.transform_to_joint_trajectory();
+  init_guess_joint.to_yaml_format("/tmp/check4.yaml");
+
+  trajectory_optimization(problem, init_guess_joint, options_trajopt, sol,
+                          result);
+
+  BOOST_TEST(result.feasible == 1);
+
+  std::cout << "optimization done! " << std::endl;
+  std::vector<int> index_time_goals;
+
+  if (problem.goal_times.size()) {
+    index_time_goals = sol.multi_robot_index_goal;
+  } else {
+    size_t num_robots = init_guess_multi_robot.get_num_robots();
+    index_time_goals = std::vector<int>(num_robots, sol.states.size());
+  }
+
+  MultiRobotTrajectory multi_out = from_joint_to_indiv_trajectory(
+      sol, init_guess_multi_robot.get_nxs(), init_guess_multi_robot.get_nus(),
+      index_time_goals);
+
+  multi_out.to_yaml_format("/tmp/test_multi_double_integrator.yaml");
+}
+
+BOOST_AUTO_TEST_CASE(t_coupled_unicycle) {
+
+  Options_trajopt options_trajopt;
+  std::string env_file =
+      DYNOBENCH_BASE "envs/multirobot/example/straight_unicycle.yaml";
+  std::string initial_guess_file = DYNOBENCH_BASE
+      "envs/multirobot/results/straight_unicycle_coupled_db.yaml";
+
+  Problem problem(env_file);
+  Trajectory init_guess(initial_guess_file);
+
+  options_trajopt.solver_id = static_cast<int>(SOLVER::traj_opt);
+  options_trajopt.control_bounds = 1;
+  options_trajopt.use_warmstart = 1;
+  options_trajopt.weight_goal = 100;
+  options_trajopt.max_iter = 50;
+  // problem.models_base_path =
+  // "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/models/";
+  problem.models_base_path = DYNOBENCH_BASE + std::string("models/");
+
+  Result_opti result;
+  Trajectory sol;
+  trajectory_optimization(problem, init_guess, options_trajopt, sol, result);
+  BOOST_TEST_CHECK(result.feasible);
+  std::cout << "cost is " << result.cost << std::endl;
+  // BOOST_TEST_CHECK(result.cost <= 10.);
+}
