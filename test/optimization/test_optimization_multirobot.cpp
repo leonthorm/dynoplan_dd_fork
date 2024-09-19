@@ -512,7 +512,6 @@ BOOST_AUTO_TEST_CASE(t_multi_robot_swap2_unicycle) {
 }
 
 // residual force included
-
 BOOST_AUTO_TEST_CASE(t_coupled_integrator2d) {
 
   Options_trajopt options_trajopt;
@@ -628,10 +627,11 @@ BOOST_AUTO_TEST_CASE(t_swap2_double_integrator) {
 BOOST_AUTO_TEST_CASE(t_coupled_unicycle) {
 
   Options_trajopt options_trajopt;
-  std::string env_file =
-      DYNOBENCH_BASE "envs/multirobot/example/straight_unicycle.yaml";
-  std::string initial_guess_file = DYNOBENCH_BASE
-      "envs/multirobot/results/straight_unicycle_coupled_db.yaml";
+  std::string env_file = "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/"
+                         "envs/multirobot/example/straight_unicycle.yaml";
+  std::string initial_guess_file =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/envs/multirobot/"
+      "results/straight_unicycle_coupled_db.yaml";
 
   Problem problem(env_file);
   Trajectory init_guess(initial_guess_file);
@@ -643,7 +643,9 @@ BOOST_AUTO_TEST_CASE(t_coupled_unicycle) {
   options_trajopt.max_iter = 50;
   // problem.models_base_path =
   // "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/models/";
-  problem.models_base_path = DYNOBENCH_BASE + std::string("models/");
+  problem.models_base_path =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/" +
+      std::string("models/");
 
   Result_opti result;
   Trajectory sol;
